@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ascension Bank</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="ui-hidden">
+    <div id="app">
+        <div class="overlay"></div>
+        <main class="shell" id="mainShell">
+            <header class="hdr">
+                <div class="hdr-brand">
+                    <span class="hdr-kicker" id="modeText">Agence</span>
+                    <h1 class="hdr-title">Ascension <span class="hdr-title-sub">banque</span></h1>
+                </div>
+                <div class="hdr-actions">
+                    <div id="statusMessage" class="status-pill" aria-live="polite"></div>
+                    <button type="button" id="refreshButton" class="btn btn-ghost">Actualiser</button>
+                    <button type="button" id="closeButton" class="btn btn-ghost">Fermer</button>
+                </div>
+            </header>
+
+            <!-- Solde = information #1 (surtout pour la Bourse) -->
+            <section class="hero-balance" aria-label="Soldes">
+                <div class="hero-balance__core">
+                    <span class="hero-label">Solde bancaire</span>
+                    <p class="hero-amount" id="bankBalance">$0</p>
+                    <p class="hero-meta" id="heroMetaLine">Cash · $0</p>
+                    <p class="hero-hint" id="depositLimitHint">Dépôt max. par opération : —</p>
+                </div>
+                <div class="hero-balance__tag">
+                    <span class="mode-badge" id="accessPill">Agence</span>
+                </div>
+            </section>
+
+            <p class="identity-line" id="identityLine">
+                <span class="identity-iban" id="ibanValue">FR0000</span>
+                <span class="identity-sep">·</span>
+                <span id="ownerValue">Titulaire</span>
+            </p>
+
+            <!-- Résumé carte : compact, masqué sur l’onglet Bourse pour gagner de la place -->
+            <section class="dash-strip" id="dashStrip">
+                <div class="dash-card-preview">
+                    <div class="dcc-chip"></div>
+                    <div class="dcc-text">
+                        <span class="dcc-brand">ASCENSION</span>
+                        <span class="dcc-iban" id="cardIban">FR0000</span>
+                        <span class="dcc-serial" id="cardSerial">—</span>
+                    </div>
+                </div>
+                <div class="dash-card-actions">
+                    <p class="dcc-state" id="cardStateText">—</p>
+                    <div class="dcc-btns">
+                        <button type="button" id="buyCardButton" class="btn btn-primary btn-xs">Acheter</button>
+                        <button type="button" id="replaceCardButton" class="btn btn-ghost btn-xs">Remplacer</button>
+                    </div>
+                </div>
+                <div class="dash-stats">
+                    <div class="dst"><span class="dst-l">Transactions</span><strong id="transactionCount" class="dst-v">0</strong></div>
+                    <div class="dst"><span class="dst-l">Carte</span><strong id="cardSummary" class="dst-v">—</strong></div>
+                </div>
+            </section>
+
+            <section class="work">
+                <nav class="tabs" id="bankTabs" role="tablist">
+                    <button type="button" class="tab active" role="tab" data-tab="operations" aria-selected="true">Opérations</button>
+                    <button type="button" class="tab tab-trade" role="tab" data-tab="trade" id="tradeTabBtn" aria-selected="false">Bourse</button>
+                    <button type="button" class="tab" role="tab" data-tab="history" aria-selected="false">Historique</button>
+                    <button type="button" class="tab" role="tab" data-tab="card" aria-selected="false">Carte</button>
+                </nav>
+
+                <div class="tab-viewport">
+                    <div class="tab-panel active" data-panel="operations" role="tabpanel">
+                        <div class="scroll-pane">
+                            <div class="ops-grid">
+                                <article class="op-card" id="depositCard">
+                                    <h2 class="op-title">Dépôt</h2>
+                                    <p class="op-desc">Transfert cash → compte courant</p>
+                                    <label class="sr-only" for="depositAmount">Montant</label>
+                                    <input id="depositAmount" type="number" min="1" class="inp" placeholder="Montant en $">
+                                    <button type="button" id="depositButton" class="btn btn-primary op-cta">Déposer</button>
+                                </article>
+                                <article class="op-card">
+                                    <h2 class="op-title">Retrait</h2>
+                                    <p class="op-desc">Compte courant → cash</p>
+                                    <label class="sr-only" for="withdrawAmount">Montant</label>
+                                    <input id="withdrawAmount" type="number" min="1" class="inp" placeholder="Montant en $">
+                                    <button type="button" id="withdrawButton" class="btn btn-primary op-cta">Retirer</button>
+                                </article>
+                                <article class="op-card op-card-wide" id="transferCard">
+                                    <h2 class="op-title">Virement</h2>
+                                    <p class="op-desc">Vers un autre IBAN</p>
+                                    <div class="op-row2">
+                                        <label class="sr-only" for="transferIban">IBAN</label>
+                                        <input id="transferIban" type="text" class="inp" placeholder="IBAN destinataire">
+                                        <label class="sr-only" for="transferAmount">Montant</label>
+                                        <input id="transferAmount" type="number" min="1" class="inp" placeholder="Montant">
+                                    </div>
+                                    <label class="sr-only" for="transferReason">Motif</label>
+                                    <input id="transferReason" type="text" maxlength="80" class="inp" placeholder="Motif (optionnel)">
+                                    <button type="button" id="transferButton" class="btn btn-primary op-cta">Envoyer</button>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-panel="trade" role="tabpanel">
+                        <div class="trade-layout">
+                            <div class="trade-toolbar">
+                                <p class="trade-lede">Les ordres sont prélevés sur votre <strong>solde bancaire</strong> uniquement. Frais à l’achat et à la vente.</p>
+                                <div id="tradeFilterRow" class="trade-chips" role="group" aria-label="Filtres"></div>
+                            </div>
+                            <div id="tradeList" class="trade-scroll" role="list"></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-panel="history" role="tabpanel">
+                        <div class="scroll-pane scroll-pane--hist">
+                            <h2 class="panel-title">Journal des mouvements</h2>
+                            <div id="transactions" class="tx-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" data-panel="card" role="tabpanel">
+                        <div class="scroll-pane">
+                            <div class="card-detail-grid">
+                                <article class="op-card">
+                                    <h2 class="op-title">Détails carte</h2>
+                                    <p id="cardPanelState" class="op-desc">—</p>
+                                    <dl class="dl-rows">
+                                        <div><dt>IBAN</dt><dd id="cardPanelIban">—</dd></div>
+                                        <div><dt>Titulaire</dt><dd id="cardPanelOwner">—</dd></div>
+                                        <div><dt>Série</dt><dd id="cardPanelSerial">—</dd></div>
+                                    </dl>
+                                </article>
+                                <article class="op-card">
+                                    <h2 class="op-title">Actions</h2>
+                                    <p class="op-desc">Carte nominative, non transférable</p>
+                                    <button type="button" id="buyCardButtonAlt" class="btn btn-primary op-cta">Acheter une carte</button>
+                                    <button type="button" id="replaceCardButtonAlt" class="btn btn-ghost op-cta">Remplacer la carte</button>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sync titre visuel carte (héros) avec onglet Carte -->
+            <span class="sr-only" id="cardOwner" aria-hidden="true"></span>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

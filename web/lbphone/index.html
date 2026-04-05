@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Trade</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app" id="trade-app" data-theme="dark">
+        <!-- Décalage sous barre d’état / encoche lb-phone -->
+        <div class="phone-safe-top" aria-hidden="true"></div>
+        <header class="app-header">
+            <div class="balance-strip" aria-label="Solde bancaire">
+                <div class="balance-strip__label">Solde banque</div>
+                <div class="balance-strip__value" id="bankBal">$0</div>
+            </div>
+            <p class="disclaimer" id="disclaimerLine">Débit compte bancaire · pertes possibles</p>
+        </header>
+
+        <p class="eco" id="ecoHint"></p>
+
+        <nav class="tabs main-tabs" role="tablist">
+            <button type="button" id="tab-mkt" class="tab active" role="tab" aria-selected="true">Marché</button>
+            <button type="button" id="tab-port" class="tab" role="tab" aria-selected="false">Portefeuille</button>
+            <button type="button" id="tab-guide" class="tab" role="tab" aria-selected="false">Guide</button>
+        </nav>
+
+        <main id="view-mkt" class="panel panel--grow" role="tabpanel">
+            <div class="filter-scroll">
+                <div class="filter-row" id="filterChips"></div>
+            </div>
+            <div class="asset-list" id="assetScroll"></div>
+        </main>
+
+        <main id="view-port" class="panel panel--grow hidden" role="tabpanel" hidden></main>
+
+        <main id="view-guide" class="panel panel--grow hidden guide-panel" role="tabpanel" hidden>
+            <section class="guide-block">
+                <h2>Profils de risque</h2>
+                <p><span class="gchip bluechip">Blue chip</span> Références lourdes, mouvements souvent plus lents.</p>
+                <p><span class="gchip index">Indice</span> Panier synthétique, beta modérée.</p>
+                <p><span class="gchip standard">Standard</span> Altcoin « classique ».</p>
+                <p><span class="gchip volatile">Volatile</span> Narratif technique ou régulation — gaps fréquents.</p>
+                <p><span class="gchip meme">Mème</span> Spéculation pure.</p>
+                <p><span class="gchip extreme">Extrême</span> Très risqué.</p>
+                <p><span class="gchip metal">Métal</span> Matières premières.</p>
+                <p><span class="gchip oil">Énergie</span> Pétrole &amp; chocs d’offre/demande fictifs.</p>
+                <p><span class="gchip institutional">Instit.</span> Carnet restreint, règles d’exposition spécifiques.</p>
+            </section>
+            <section class="guide-block">
+                <h2>Rappels</h2>
+                <ul>
+                    <li>Frais à l’achat et à la vente : voir le pied de page.</li>
+                    <li>Cotes actualisées par cycles serveur et masse bancaire globale.</li>
+                    <li>Aucun actif ne garantit un gain.</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer class="foot" id="footNote"></footer>
+        <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
