@@ -24,25 +24,23 @@ AscensionBankDefaults = {
         },
     },
     atm = {
+        --- Tous les props listés deviennent utilisables via ox_target (sans coords manuelles).
+        autoWorldAtms = true,
+        worldAtmModels = {
+            'prop_atm_01',
+            'prop_atm_02',
+            'prop_atm_03',
+            'prop_fleeca_atm',
+        },
+        worldAtmLabel = 'Distributeur automatique',
+        worldAtmDistance = 1.8,
+        worldAtmIcon = 'credit-card',
         settings = {
             withdrawLimit = 5000,
             withdrawFee = 5,
         },
-        entries = {
-            {
-                id = 'atm_legion_1',
-                label = 'ATM Legion',
-                type = 'atm',
-                icon = 'credit-card',
-                coords = { x = 147.67, y = -1035.69, z = 29.34 },
-                length = 0.9,
-                width = 0.9,
-                heading = 340.0,
-                minZ = 28.34,
-                maxZ = 30.94,
-                distance = 1.8,
-            },
-        },
+        --- Vide par défaut : ATM via addModel (worldAtmLabel). Remplir uniquement si autoWorldAtms = false.
+        entries = {},
     },
     --- Marché boursier / matières premières (app téléphone, débit uniquement depuis le compte banque)
     trading = {

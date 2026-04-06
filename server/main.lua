@@ -654,5 +654,10 @@ ESX.RegisterServerCallback('ascension_bank:server:founderMarketSetPrices', funct
         'UPDATE aab_market_assets SET previous_price = current_price, current_price = ?, base_price = ? WHERE asset_id = ?',
         { currentPrice, basePrice, assetId }
     )
+    if GetResourceState('asc_admin') == 'started' then
+        pcall(function()
+            exports.asc_admin:StaffAuditLog(source, 'bank_founder_market', nil, ('%s → courant %s base %s'):format(assetId, currentPrice, basePrice))
+        end)
+    end
     cb({ ok = true })
 end)

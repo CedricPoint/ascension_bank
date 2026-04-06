@@ -1,6 +1,9 @@
 local ResourceName = GetCurrentResourceName()
 local Utils = AscensionBankUtils
 
+--- Option ox_target unique pour les ATM monde (addModel) — doit correspondre au removeModel.
+local ATM_WORLD_TARGET_NAME = 'ascension_bank_atm_world'
+
 local State = {
     config = {
         bank = Utils.deepCopy(AscensionBankDefaults.bank),
@@ -8,6 +11,8 @@ local State = {
     },
     zones = {},
     blips = {},
+    --- Liste des noms de modèles enregistrés (pour removeModel au reload / stop)
+    atmWorldModelsRegistered = nil,
 }
 
 local function closeUi()
@@ -59,8 +64,58 @@ local function clearZones()
     State.zones = {}
 end
 
+local function clearAtmWorldModels()
+    if not State.atmWorldModelsRegistered or #State.atmWorldModelsRegistered == 0 then
+        State.atmWorldModelsRegistered = nil
+        return
+    end
+    exports.ox_target:removeModel(State.atmWorldModelsRegistered, ATM_WORLD_TARGET_NAME)
+    State.atmWorldModelsRegistered = nil
+end
+
+local function registerAtmWorldModels()
+    local atm = State.config.atm or {}
+    if atm.autoWorldAtms == false then
+        return
+    end
+
+    local modelList = atm.worldAtmModels
+    if type(modelList) ~= 'table' or #modelList == 0 then
+        modelList = AscensionBankDefaults.atm.worldAtmModels or {}
+    end
+
+    local models = {}
+    for _, m in ipairs(modelList) do
+        if type(m) == 'string' and m ~= '' then
+            models[#models + 1] = m
+        end
+    end
+    if #models == 0 then
+        return
+    end
+
+    local label = atm.worldAtmLabel or AscensionBankDefaults.atm.worldAtmLabel or 'Distributeur automatique'
+    local distance = atm.worldAtmDistance or AscensionBankDefaults.atm.worldAtmDistance or 1.8
+    local iconName = atm.worldAtmIcon or AscensionBankDefaults.atm.worldAtmIcon or 'credit-card'
+
+    exports.ox_target:addModel(models, {
+        {
+            name = ATM_WORLD_TARGET_NAME,
+            icon = ('fa-solid fa-%s'):format(iconName),
+            label = label,
+            distance = distance + 0.0,
+            onSelect = function()
+                local bank = lib.callback.await('ascension_bank:server:getBankData', false)
+                if bank then openUi({ mode = 'atm', bank = bank }) end
+            end,
+        },
+    })
+    State.atmWorldModelsRegistered = models
+end
+
 local function registerBankZones()
     clearZones()
+    clearAtmWorldModels()
     clearBlips()
 
     for _, entry in ipairs(State.config.bank.entries or {}) do
@@ -87,28 +142,33 @@ local function registerBankZones()
         createBlip(entry, 108, 2, entry.label)
     end
 
-    for _, entry in ipairs(State.config.atm.entries or {}) do
-        local zone = buildZone(entry)
-        local id = exports.ox_target:addBoxZone({
-            coords = zone.coords,
-            size = zone.size,
-            rotation = zone.rotation,
-            debug = false,
-            options = {
-                {
-                    name = entry.id,
-                    icon = ('fa-solid fa-%s'):format(entry.icon or 'credit-card'),
-                    label = entry.label,
-                    distance = entry.distance or 2.0,
-                    onSelect = function()
-                        local bank = lib.callback.await('ascension_bank:server:getBankData', false)
-                        if bank then openUi({ mode = 'atm', bank = bank }) end
-                    end,
+    registerAtmWorldModels()
+
+    local atmCfg = State.config.atm or {}
+    --- Pas de blips ATM : interaction uniquement sur les props (libellé worldAtmLabel, ex. Distributeur automatique).
+    if atmCfg.autoWorldAtms == false then
+        for _, entry in ipairs(atmCfg.entries or {}) do
+            local zone = buildZone(entry)
+            local id = exports.ox_target:addBoxZone({
+                coords = zone.coords,
+                size = zone.size,
+                rotation = zone.rotation,
+                debug = false,
+                options = {
+                    {
+                        name = entry.id,
+                        icon = ('fa-solid fa-%s'):format(entry.icon or 'credit-card'),
+                        label = entry.label,
+                        distance = entry.distance or 2.0,
+                        onSelect = function()
+                            local bank = lib.callback.await('ascension_bank:server:getBankData', false)
+                            if bank then openUi({ mode = 'atm', bank = bank }) end
+                        end,
+                    },
                 },
-            },
-        })
-        State.zones[#State.zones + 1] = id
-        createBlip(entry, 277, 2, entry.label)
+            })
+            State.zones[#State.zones + 1] = id
+        end
     end
 end
 
@@ -172,6 +232,7 @@ AddEventHandler('onClientResourceStop', function(resourceName)
     if resourceName ~= ResourceName then return end
     closeUi()
     clearZones()
+    clearAtmWorldModels()
     clearBlips()
 end)
 

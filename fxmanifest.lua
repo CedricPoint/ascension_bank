@@ -5,7 +5,7 @@ lua54 'yes'
 name 'ascension_bank'
 author 'CedricPoint'
 description 'Ascension Bank (CedricPoint Edition) — banque ESX + OX, marché (dont CedricPoint $CP), LB Phone Trade'
-version '2.1.0'
+version '2.2.0'
 
 dependencies {
     'oxmysql',

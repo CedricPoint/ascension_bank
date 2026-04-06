@@ -9,9 +9,9 @@ Système bancaire complet pour **ESX Legacy**, pensé pour **Ascension RP** et l
 | | |
 |---|---|
 | **Ressource** | `ascension_bank` |
-| **Version** | **2.1.0** (alignée sur `fxmanifest.lua` — *CedricPoint Edition*) |
+| **Version** | **2.2.0** (alignée sur `fxmanifest.lua` — *CedricPoint Edition*) |
 | **Auteur** | **CedricPoint** |
-| **Schéma SQL** | **2.1.0** — fichier unique documenté ci-dessous |
+| **Schéma SQL** | **2.1.0** (inchangé depuis 2.1.x) — fichier unique documenté ci-dessous |
 
 ---
 
@@ -36,7 +36,7 @@ Système bancaire complet pour **ESX Legacy**, pensé pour **Ascension RP** et l
 ## Pourquoi « CedricPoint Edition » ?
 
 - La ressource intègre **CedricPoint ($CP)** comme actif **prime** du marché (`CEDRIC_PT`) : profil institutionnel, règles de tick et plafond d’exposition dédiés (`primeMaxPositionValue`), cohérents avec l’identité **CedricPoint**.
-- La **version** du manifest (`2.1.0`) et la **version de schéma SQL** (`2.1.0`) sont documentées ensemble pour les releases GitHub et le suivi de migrations.
+- La **version** du manifest (ex. `2.2.0`) et la **version de schéma SQL** (`2.1.0` tant qu’aucune migration n’est publiée) sont documentées ensemble pour les releases GitHub et le suivi de migrations.
 - L’application téléphone **Trade** annonce le développeur **CedricPoint** (voir `client/lbphone_app.lua`).
 
 ---
@@ -49,7 +49,7 @@ Système bancaire complet pour **ESX Legacy**, pensé pour **Ascension RP** et l
 | **Solde** | Le solde réel reste dans `users.accounts.bank` (ESX) ; les tables custom servent IBAN + historique + marché |
 | **Opérations** | Dépôt, retrait, virement (limites & frais configurables) |
 | **Carte** | Item `creditcard` (ox_inventory) avec métadonnées |
-| **Points d’accès** | Banques & ATM via **ox_target** (coords dans `shared/defaults.lua`) |
+| **Points d’accès** | **Banques** : zones **ox_target** (`bank.entries`). **ATM** : **ox_target** sur les props du monde (`addModel`, ex. `prop_atm_01` …) — pas de blips ATM ; libellé cible configurable (`worldAtmLabel`, défaut *Distributeur automatique*) |
 | **Marché** | Achat / vente **uniquement depuis le solde banque** ; ticks serveur ; filtres (blue chips, indices, entreprises, mèmes, etc.) |
 | **CedricPoint ($CP)** | Actif **prime** ; exposition plafonnée ; logique de prix distincte des autres actifs |
 | **Effet « foule »** | Plusieurs détenteurs / forte valo ouverte → pression négative modérée ; marché peu détenu → léger biais favorable (sans garantie de gain) |
@@ -132,12 +132,16 @@ Aucune modification des fichiers internes de **lb-phone** n’est requise.
 ### Fichier `shared/defaults.lua`
 
 - **`bank.settings`** / **`atm.settings`** : limites, frais.
-- **`bank.entries`** / **`atm.entries`** : positions **ox_target** (coords, zones).
+- **`bank.entries`** : agences **ox_target** (coords, zones box) + blips banque.
+- **`atm`** (v2.2+) :
+  - **`autoWorldAtms`** (`true` par défaut) : enregistre une option **ox_target** sur tous les props listés dans **`worldAtmModels`** (`prop_atm_01`, `prop_atm_02`, `prop_atm_03`, `prop_fleeca_atm`, extensible).
+  - **`worldAtmLabel`**, **`worldAtmDistance`**, **`worldAtmIcon`** : texte et rayon de la cible (pas de blip ATM).
+  - **`atm.entries`** : utilisé **uniquement** si **`autoWorldAtms = false`** — zones manuelles, **sans blip** (mode secours / maps custom).
 - **`trading`** : intervalle de tick, frais d’ordre, min/max ordre, plafonds d’exposition (`maxPositionValue`, **`primeMaxPositionValue`** pour **CedricPoint**), volatilités par classe (`cryptoBaseVol`, `commodityBaseVol`, `equityBaseVol`, etc.), bornes d’« économie serveur » (`economyBankLow` / `economyBankHigh`).
 
 ### Module `ascension_adminconfig` (optionnel)
 
-Si la ressource **`ascension_adminconfig`** est démarrée et expose `GetModuleConfig('bank')`, les clés de `bank.settings` et `bank.settings.trading` peuvent **écraser** les valeurs de `defaults.lua` sans éditer les fichiers (utile en prod).
+Si la ressource **`ascension_adminconfig`** est démarrée et expose `GetModuleConfig('bank')` / `GetModuleConfig('atm')`, les modules **bank** et **atm** (dont `autoWorldAtms`, `worldAtmModels`, `settings`, `entries`) peuvent **écraser** les valeurs de `defaults.lua` sans éditer les fichiers (utile en prod). Les mêmes clés ATM existent dans les defaults adminconfig.
 
 ---
 
@@ -181,7 +185,9 @@ ascension_bank/
 
 | Objectif | Où agir |
 |----------|---------|
-| Nouvelle banque / ATM | `shared/defaults.lua` → `entries` (id, coords, zone) |
+| Nouvelle **agence** | `shared/defaults.lua` → `bank.entries` (id, coords, zone) |
+| ATM sur toute la carte | Défaut : **`autoWorldAtms`** + **`worldAtmModels`** — ajouter un nom de prop si votre map utilise un modèle custom |
+| ATM **uniquement** en zones manuelles | `autoWorldAtms = false` puis `atm.entries` (coords, zone **ox_target**, pas de blip) |
 | Limites virement / frais | `defaults.lua` ou adminconfig |
 | **Nouvel actif boursier** | Table `aab_market_assets` : nouvelle ligne (id unique, `category`, `risk_profile`, prix de base). Puis redémarrage ou prochain tick. Vous pouvez étendre le même `INSERT` du fichier SQL pour les futurs dumps. |
 | Calmer / aggraver le marché | `trading` dans `defaults.lua` : `*BaseVol`, `*MaxTickPct`, `tickIntervalMs` |
@@ -217,12 +223,13 @@ Si les convars sont vides, aucun envoi n’est effectué.
 | Carte introuvable | Item + image `creditcard` côté **ox_inventory**. |
 | Solde incohérent | Rappel : le **bank** ESX reste la source de vérité ; en cas de désync extrême, vérifier les events ESX et les erreurs `oxmysql`. |
 | Marché vide | Tables `aab_market_assets` non importées → réimporter `ascension_bank_full.sql`. |
+| Pas de cible sur un ATM | Vérifier **`worldAtmModels`** : ajouter le nom exact du prop si la map utilise un modèle non vanilla ; **`ox_target`** doit être démarré. |
 
 ---
 
 ## Crédits & licence
 
-- **Auteur / édition** : **CedricPoint** — *Ascension Bank — CedricPoint Edition* **v2.1.0**.
+- **Auteur / édition** : **CedricPoint** — *Ascension Bank — CedricPoint Edition* **v2.2.0**.
 - Actif fictif **CedricPoint ($CP)** et marque **Ascension** : cohérence roleplay avec le serveur Ascension RP.
 - **LB Phone** est un produit tiers (Lb Scripts) ; cette ressource ne l’inclut pas, elle s’y **branche** uniquement.
 
@@ -230,4 +237,4 @@ Licence : celle indiquée sur le dépôt GitHub (si aucune licence n’est fourn
 
 ---
 
-*README généré pour une documentation GitHub complète — schéma SQL **2.1.0** — **CedricPoint**.*
+*README — ressource **2.2.0**, schéma SQL **2.1.0** — **CedricPoint**.*
